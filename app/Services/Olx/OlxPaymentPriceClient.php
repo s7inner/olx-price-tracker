@@ -12,35 +12,33 @@ class OlxPaymentPriceClient
      */
     public function fetchCurrentPriceByAdId(string $olxAdId): array
     {
-        $paymentApiResponse = Http::timeout(15)
-            ->acceptJson()
-            ->get($this->buildPaymentApiUrl($olxAdId));
-
-        if ($paymentApiResponse->failed()) {
-            throw new RuntimeException('Failed to fetch price from OLX payment API.');
-        }
-
         /** @var array<string, mixed> $paymentApiPayload */
-        $paymentApiPayload = $paymentApiResponse->json();
+        $paymentApiPayload = Http::acceptJson()
+            ->get($this->buildPaymentApiUrl($olxAdId))
+            ->throw()
+            ->json();
+
         $rawCurrentPriceMinor = data_get($paymentApiPayload, 'product.price');
-        $rawCurrencyCode = data_get($paymentApiPayload, 'product.currency');
+        $currencyCode = strtoupper(trim((string) data_get($paymentApiPayload, 'product.currency', '')));
 
         if (! is_numeric($rawCurrentPriceMinor)) {
             throw new RuntimeException('OLX payment API did not return a valid numeric price.');
         }
 
-        if (! is_string($rawCurrencyCode) || trim($rawCurrencyCode) === '') {
+        if ($currencyCode === '') {
             throw new RuntimeException('OLX payment API did not return a valid currency code.');
         }
 
         return [
             'current_price_minor' => (int) $rawCurrentPriceMinor,
-            'currency_code' => strtoupper(trim($rawCurrencyCode)),
+            'currency_code' => $currencyCode,
         ];
     }
 
     private function buildPaymentApiUrl(string $olxAdId): string
     {
-        return "https://ua.production.delivery.olx.tools/payment/ad/{$olxAdId}/buyer/?lang=uk-UA";
+        $paymentBaseUrl = rtrim((string) config('olx.payment_base_url'), '/');
+
+        return "{$paymentBaseUrl}/payment/ad/{$olxAdId}/buyer/";
     }
 }

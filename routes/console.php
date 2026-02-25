@@ -2,4 +2,6 @@
 
 use Illuminate\Support\Facades\Schedule;
 
-Schedule::command('ads:check-olx-prices')->everyThirtyMinutes();
+Schedule::command('ads:check-olx-prices')
+    ->everyThirtyMinutes()
+    ->withoutOverlapping();

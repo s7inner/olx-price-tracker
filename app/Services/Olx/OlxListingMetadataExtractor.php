@@ -9,8 +9,7 @@ class OlxListingMetadataExtractor
 {
     public function extractAdIdFromListingPage(string $listingUrl): string
     {
-        $listingPageResponse = Http::timeout(15)
-            ->accept('text/html')
+        $listingPageResponse = Http::accept('text/html')
             ->get($listingUrl);
 
         if ($listingPageResponse->failed()) {
@@ -18,20 +17,10 @@ class OlxListingMetadataExtractor
         }
 
         $listingHtml = $listingPageResponse->body();
-        $productSchemaData = $this->extractProductSchemaData($listingHtml);
-        $rawOlxAdId = $productSchemaData['sku'] ?? null;
-
-        if (! is_scalar($rawOlxAdId) || trim((string) $rawOlxAdId) === '') {
-            throw new RuntimeException('Failed to extract ad ID from listing page schema.');
-        }
-
-        return trim((string) $rawOlxAdId);
+        return $this->extractAdIdFromJsonLdScripts($listingHtml);
     }
 
-    /**
-     * @return array<string, mixed>
-     */
-    private function extractProductSchemaData(string $listingHtml): array
+    private function extractAdIdFromJsonLdScripts(string $listingHtml): string
     {
         preg_match_all('/<script[^>]*type=["\']application\/ld\+json["\'][^>]*>(.*?)<\/script>/is', $listingHtml, $jsonLdMatches);
         $jsonLdScriptBodies = $jsonLdMatches[1] ?? [];
@@ -43,61 +32,20 @@ class OlxListingMetadataExtractor
                 continue;
             }
 
-            $productSchemaData = $this->findFirstProductSchemaNode($decodedJsonLd);
+            $schemaType = $decodedJsonLd['@type'] ?? null;
+            $isProductSchema = is_string($schemaType) && strtolower($schemaType) === 'product';
 
-            if ($productSchemaData !== null) {
-                return $productSchemaData;
-            }
-        }
-
-        throw new RuntimeException('Product schema in JSON-LD was not found on listing page.');
-    }
-
-    /**
-     * @param  array<mixed>  $jsonNode
-     * @return array<string, mixed>|null
-     */
-    private function findFirstProductSchemaNode(array $jsonNode): ?array
-    {
-        if ($this->isProductSchemaNode($jsonNode)) {
-            return $jsonNode;
-        }
-
-        foreach ($jsonNode as $childNode) {
-            if (! is_array($childNode)) {
+            if (! $isProductSchema) {
                 continue;
             }
 
-            $foundProductSchemaNode = $this->findFirstProductSchemaNode($childNode);
+            $rawOlxAdId = $decodedJsonLd['sku'] ?? null;
 
-            if ($foundProductSchemaNode !== null) {
-                return $foundProductSchemaNode;
+            if (is_scalar($rawOlxAdId) && trim((string) $rawOlxAdId) !== '') {
+                return trim((string) $rawOlxAdId);
             }
         }
 
-        return null;
-    }
-
-    /**
-     * @param  array<string, mixed>  $schemaNode
-     */
-    private function isProductSchemaNode(array $schemaNode): bool
-    {
-        $schemaType = $schemaNode['@type'] ?? null;
-
-        if (is_string($schemaType)) {
-            return strtolower($schemaType) === 'product';
-        }
-
-        if (is_array($schemaType)) {
-            $normalizedSchemaTypes = array_map(
-                static fn (mixed $value): string => is_scalar($value) ? strtolower((string) $value) : '',
-                $schemaType
-            );
-
-            return in_array('product', $normalizedSchemaTypes, true);
-        }
-
-        return false;
+        throw new RuntimeException('Product schema with valid SKU was not found on listing page.');
     }
 }
