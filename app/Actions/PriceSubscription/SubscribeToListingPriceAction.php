@@ -1,16 +1,17 @@
 <?php
 
-namespace App\Services\PriceSubscription;
+namespace App\Actions\PriceSubscription;
 
 use App\Models\PriceSubscription;
 use App\Models\TrackedAd;
 use App\Services\Olx\OlxListingAvailabilityChecker;
-use App\Services\Olx\OlxListingPageClient;
 use App\Services\Olx\OlxListingMetadataExtractor;
+use App\Services\Olx\OlxListingPageClient;
 use App\Services\Olx\OlxPaymentPriceClient;
+use App\Services\PriceSubscription\SubscriptionDTO;
 use Illuminate\Support\Facades\DB;
 
-readonly class SubscribeToListingPriceService
+readonly class SubscribeToListingPriceAction
 {
     public function __construct(
         private OlxListingPageClient $olxListingPageClient,
@@ -20,7 +21,7 @@ readonly class SubscribeToListingPriceService
     ) {
     }
 
-    public function handle(string $listingUrl, string $subscriberEmail): SubscriptionDTO
+    public function __invoke(string $listingUrl, string $subscriberEmail): SubscriptionDTO
     {
         $existingTrackedAd = TrackedAd::query()
             ->where('listing_url', $listingUrl)
