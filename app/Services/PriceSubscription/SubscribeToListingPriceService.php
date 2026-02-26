@@ -43,6 +43,11 @@ readonly class SubscribeToListingPriceService
         $olxAdId = $this->olxListingMetadataExtractor->extractAdIdFromListingHtml($listingPageResponse->body());
         $currentPriceSnapshot = $this->olxPaymentPriceClient->fetchCurrentPriceByAdId($olxAdId);
 
+        /* Tip:
+         * https://www.olx.ua/d/uk/obyavlenie/-IDZXcb0.html is also a valid URL
+         * OLX primarily uses the -ID<token>.html pattern
+         */
+
         return DB::transaction(function () use (
             $listingUrl,
             $subscriberEmail,

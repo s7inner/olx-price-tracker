@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ListingNotificationType;
 use App\Exceptions\ListingPreflightException;
 use App\Http\Requests\StorePriceSubscriptionRequest;
 use App\Http\Resources\PriceSubscriptionResource;
+use App\Jobs\SendListingNotificationEmailJob;
 use App\Services\PriceSubscription\SubscribeToListingPriceService;
 use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -35,10 +37,21 @@ class PriceSubscriptionController extends Controller
             ], Response::HTTP_SERVICE_UNAVAILABLE);
         }
 
-        $responseStatusCode = $subscriptionDTO->isNewSubscription ? Response::HTTP_CREATED : Response::HTTP_OK;
+        if ($subscriptionDTO->isNewSubscription) {
+            SendListingNotificationEmailJob::dispatch(
+                subscriberEmail: $request->input('subscriber_email'),
+                listingUrl: $subscriptionDTO->listingUrl,
+                notificationType: ListingNotificationType::SUBSCRIPTION_CREATED,
+                currentPriceMinor: $subscriptionDTO->currentPriceMinor,
+                currencyCode: $subscriptionDTO->currencyCode,
+            );
+        }
 
         return (new PriceSubscriptionResource($subscriptionDTO))
             ->response()
-            ->setStatusCode($responseStatusCode);
+            ->setStatusCode($subscriptionDTO->isNewSubscription ?
+                Response::HTTP_CREATED :
+                Response::HTTP_OK
+            );
     }
 }

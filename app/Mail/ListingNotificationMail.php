@@ -8,7 +8,6 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
-use RuntimeException;
 
 class ListingNotificationMail extends Mailable
 {
@@ -22,12 +21,6 @@ class ListingNotificationMail extends Mailable
         public readonly ?int $currentPriceMinor = null,
         public readonly ?string $currencyCode = null,
     ) {
-        if (
-            $this->notificationType === ListingNotificationType::PRICE_CHANGED
-            && ($this->previousPriceMinor === null || $this->currentPriceMinor === null || $this->currencyCode === null)
-        ) {
-            throw new RuntimeException('Price-changed notification requires previous/current price and currency.');
-        }
     }
 
     public function envelope(): Envelope
@@ -36,7 +29,7 @@ class ListingNotificationMail extends Mailable
             subject: match ($this->notificationType) {
                 ListingNotificationType::PRICE_CHANGED => 'OLX listing price changed',
                 ListingNotificationType::LISTING_INACTIVE => 'OLX listing is no longer active',
-                default => 'OLX listing notification',
+                ListingNotificationType::SUBSCRIPTION_CREATED => 'You have successfully subscribed to OLX listing updates',
             },
         );
     }
