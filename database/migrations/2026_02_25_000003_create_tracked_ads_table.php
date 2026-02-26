@@ -18,6 +18,7 @@ return new class extends Migration
             $table->unsignedBigInteger('current_price_minor');
             $table->string('currency_code', 3);
             $table->timestamp('last_checked_at')->nullable();
+            $table->timestamp('listing_inactive_notified_at')->nullable();
             $table->timestamps();
         });
     }

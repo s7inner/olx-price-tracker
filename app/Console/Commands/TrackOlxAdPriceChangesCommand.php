@@ -2,12 +2,14 @@
 
 namespace App\Console\Commands;
 
-use App\Jobs\SendPriceChangedEmailJob;
+use App\Enums\ListingNotificationType;
+use App\Jobs\SendListingNotificationEmailJob;
 use App\Models\TrackedAd;
-use App\Services\Olx\OlxListingMetadataExtractor;
 use App\Services\Olx\OlxPaymentPriceClient;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 
 class TrackOlxAdPriceChangesCommand extends Command
@@ -18,7 +20,6 @@ class TrackOlxAdPriceChangesCommand extends Command
 
     public function __construct(
         private readonly OlxPaymentPriceClient $olxPaymentPriceClient,
-        private readonly OlxListingMetadataExtractor $olxListingMetadataExtractor,
     ) {
         parent::__construct();
     }
@@ -26,6 +27,7 @@ class TrackOlxAdPriceChangesCommand extends Command
     public function handle(): int
     {
         TrackedAd::query()
+            ->whereHas('subscriptions')
             ->with('subscriptions')
             ->chunkById(100, function ($trackedAds): void {
                 foreach ($trackedAds as $trackedAd) {
@@ -39,7 +41,45 @@ class TrackOlxAdPriceChangesCommand extends Command
     private function checkTrackedAdPrice(TrackedAd $trackedAd): void
     {
         try {
-            $currentPriceSnapshot = $this->fetchCurrentPriceWithFallback($trackedAd);
+            $listingPageStatusCode = Http::accept('text/html')
+                ->get($trackedAd->listing_url)
+                ->status();
+        } catch (Throwable $throwable) {
+            Log::warning('Failed to check tracked OLX listing page status.', [
+                'tracked_ad_id' => $trackedAd->id,
+                'olx_ad_id' => $trackedAd->olx_ad_id,
+                'listing_url' => $trackedAd->listing_url,
+                'error' => $throwable->getMessage(),
+            ]);
+
+            return;
+        }
+
+        if ($listingPageStatusCode === Response::HTTP_GONE) {
+            $this->notifyListingInactive($trackedAd);
+
+            return;
+        }
+
+        if ($listingPageStatusCode !== Response::HTTP_OK) {
+            Log::warning('Unexpected tracked OLX listing page status.', [
+                'tracked_ad_id' => $trackedAd->id,
+                'olx_ad_id' => $trackedAd->olx_ad_id,
+                'listing_url' => $trackedAd->listing_url,
+                'status_code' => $listingPageStatusCode,
+            ]);
+
+            return;
+        }
+
+        if ($trackedAd->listing_inactive_notified_at !== null) {
+            $trackedAd->forceFill([
+                'listing_inactive_notified_at' => null,
+            ])->save();
+        }
+
+        try {
+            $currentPriceSnapshot = $this->olxPaymentPriceClient->fetchCurrentPriceByAdId($trackedAd->olx_ad_id);
         } catch (Throwable $throwable) {
             Log::warning('Failed to check tracked OLX ad price.', [
                 'tracked_ad_id' => $trackedAd->id,
@@ -66,9 +106,10 @@ class TrackOlxAdPriceChangesCommand extends Command
         }
 
         foreach ($trackedAd->subscriptions as $subscription) {
-            SendPriceChangedEmailJob::dispatch(
+            SendListingNotificationEmailJob::dispatch(
                 subscriberEmail: $subscription->subscriber_email,
                 listingUrl: $trackedAd->listing_url,
+                notificationType: ListingNotificationType::PRICE_CHANGED,
                 previousPriceMinor: $previousPriceMinor,
                 currentPriceMinor: $currentPriceMinor,
                 currencyCode: $trackedAd->currency_code,
@@ -76,29 +117,23 @@ class TrackOlxAdPriceChangesCommand extends Command
         }
     }
 
-    /**
-     * @return array{current_price_minor: int, currency_code: string}
-     */
-    private function fetchCurrentPriceWithFallback(TrackedAd $trackedAd): array
+    private function notifyListingInactive(TrackedAd $trackedAd): void
     {
-        try {
-            return $this->olxPaymentPriceClient->fetchCurrentPriceByAdId($trackedAd->olx_ad_id);
-        } catch (Throwable $initialError) {
-            $fallbackOlxAdId = $this->olxListingMetadataExtractor->extractAdIdFromListingPage($trackedAd->listing_url);
-            $fallbackPriceSnapshot = $this->olxPaymentPriceClient->fetchCurrentPriceByAdId($fallbackOlxAdId);
-
-            if ($fallbackOlxAdId !== $trackedAd->olx_ad_id) {
-                $isFallbackAdIdAlreadyTracked = TrackedAd::query()
-                    ->where('olx_ad_id', $fallbackOlxAdId)
-                    ->whereKeyNot($trackedAd->id)
-                    ->exists();
-
-                if (! $isFallbackAdIdAlreadyTracked) {
-                    $trackedAd->forceFill(['olx_ad_id' => $fallbackOlxAdId])->save();
-                }
-            }
-
-            return $fallbackPriceSnapshot;
+        if ($trackedAd->listing_inactive_notified_at !== null) {
+            return;
         }
+
+        foreach ($trackedAd->subscriptions as $subscription) {
+            SendListingNotificationEmailJob::dispatch(
+                subscriberEmail: $subscription->subscriber_email,
+                listingUrl: $trackedAd->listing_url,
+                notificationType: ListingNotificationType::LISTING_INACTIVE,
+            );
+        }
+
+        $trackedAd->forceFill([
+            'listing_inactive_notified_at' => now(),
+            'last_checked_at' => now(),
+        ])->save();
     }
 }

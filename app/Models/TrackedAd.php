@@ -13,10 +13,12 @@ class TrackedAd extends Model
         'current_price_minor',
         'currency_code',
         'last_checked_at',
+        'listing_inactive_notified_at',
     ];
 
     protected $casts = [
         'last_checked_at' => 'datetime',
+        'listing_inactive_notified_at' => 'datetime',
     ];
 
     public function subscriptions(): HasMany
