@@ -4,6 +4,8 @@ namespace App\Services\PriceSubscription;
 
 use App\Models\PriceSubscription;
 use App\Models\TrackedAd;
+use App\Services\Olx\OlxListingAvailabilityChecker;
+use App\Services\Olx\OlxListingPageClient;
 use App\Services\Olx\OlxListingMetadataExtractor;
 use App\Services\Olx\OlxPaymentPriceClient;
 use Illuminate\Support\Facades\DB;
@@ -11,8 +13,10 @@ use Illuminate\Support\Facades\DB;
 readonly class SubscribeToListingPriceService
 {
     public function __construct(
+        private OlxListingPageClient $olxListingPageClient,
+        private OlxListingAvailabilityChecker $olxListingAvailabilityChecker,
         private OlxListingMetadataExtractor $olxListingMetadataExtractor,
-        private OlxPaymentPriceClient       $olxPaymentPriceClient,
+        private OlxPaymentPriceClient $olxPaymentPriceClient,
     ) {
     }
 
@@ -23,21 +27,28 @@ readonly class SubscribeToListingPriceService
             ->first();
 
         if ($existingTrackedAd !== null) {
-            $subscription = $this->createSubscription($existingTrackedAd, $subscriberEmail);
+            $subscription = $this->ensureSubscription($existingTrackedAd, $subscriberEmail);
 
             return SubscriptionDTO::fromModels($existingTrackedAd, $subscription);
         }
 
-        $olxAdId = $this->olxListingMetadataExtractor->extractAdIdFromListingPage($listingUrl);
+        return $this->createTrackedAdAndSubscribe($listingUrl, $subscriberEmail);
+    }
+
+    private function createTrackedAdAndSubscribe(string $listingUrl, string $subscriberEmail): SubscriptionDTO
+    {
+        $listingPageResponse = $this->olxListingPageClient->fetch($listingUrl);
+        $this->olxListingAvailabilityChecker->assertSubscribableResponse($listingPageResponse);
+
+        $olxAdId = $this->olxListingMetadataExtractor->extractAdIdFromListingHtml($listingPageResponse->body());
         $currentPriceSnapshot = $this->olxPaymentPriceClient->fetchCurrentPriceByAdId($olxAdId);
 
-        /** @var array{tracked_ad: TrackedAd, subscription: PriceSubscription} $persistedSubscriptionData */
-        $persistedSubscriptionData = DB::transaction(function () use (
+        return DB::transaction(function () use (
             $listingUrl,
             $subscriberEmail,
             $olxAdId,
             $currentPriceSnapshot
-        ): array {
+        ): SubscriptionDTO {
             $trackedAd = TrackedAd::updateOrCreate(
                 ['olx_ad_id' => $olxAdId],
                 [
@@ -48,21 +59,13 @@ readonly class SubscribeToListingPriceService
                 ]
             );
 
-            $subscription = $this->createSubscription($trackedAd, $subscriberEmail);
+            $subscription = $this->ensureSubscription($trackedAd, $subscriberEmail);
 
-            return [
-                'tracked_ad' => $trackedAd,
-                'subscription' => $subscription,
-            ];
+            return SubscriptionDTO::fromModels($trackedAd, $subscription);
         });
-
-        return SubscriptionDTO::fromModels(
-            $persistedSubscriptionData['tracked_ad'],
-            $persistedSubscriptionData['subscription']
-        );
     }
 
-    private function createSubscription(TrackedAd $trackedAd, string $subscriberEmail): PriceSubscription
+    private function ensureSubscription(TrackedAd $trackedAd, string $subscriberEmail): PriceSubscription
     {
         return PriceSubscription::firstOrCreate([
             'tracked_ad_id' => $trackedAd->id,

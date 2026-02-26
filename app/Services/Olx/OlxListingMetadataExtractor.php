@@ -2,26 +2,12 @@
 
 namespace App\Services\Olx;
 
-use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
 class OlxListingMetadataExtractor
 {
-    public function extractAdIdFromListingPage(string $listingUrl): string
+    public function extractAdIdFromListingHtml(string $listingHtml): string
     {
-        $listingPageResponse = Http::accept('text/html')
-            ->timeout(config('olx.http.timeout_seconds'))
-            ->retry(
-                config('olx.http.retry_times'),
-                config('olx.http.retry_sleep_ms')
-            )
-            ->get($listingUrl);
-
-        if ($listingPageResponse->failed()) {
-            throw new RuntimeException('Failed to fetch listing page.');
-        }
-
-        $listingHtml = $listingPageResponse->body();
         $adId = $this->extractAdIdFromLinks($listingHtml)
             ?? $this->extractAdIdFromJsonLdScripts($listingHtml)
             ?? $this->extractAdIdFromVisibleIdLabel($listingHtml);
