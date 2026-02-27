@@ -29,6 +29,10 @@ class ListingNotificationMail extends Mailable
             subject: match ($this->notificationType) {
                 ListingNotificationType::PRICE_CHANGED => 'OLX listing price changed',
                 ListingNotificationType::LISTING_INACTIVE => 'OLX listing is no longer active',
+                ListingNotificationType::LISTING_NON_PUBLIC => 'OLX listing is temporarily non-public',
+                ListingNotificationType::LISTING_REACTIVATED => 'OLX listing is active again',
+                ListingNotificationType::LISTING_REACTIVATED_WITH_PRICE_CHANGE => 'OLX listing is active again and price changed',
+                ListingNotificationType::LISTING_UNAVAILABLE => 'OLX listing is temporarily unavailable',
                 ListingNotificationType::SUBSCRIPTION_CREATED => 'You have successfully subscribed to OLX listing updates',
             },
         );

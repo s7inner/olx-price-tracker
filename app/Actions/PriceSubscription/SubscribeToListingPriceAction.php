@@ -2,6 +2,7 @@
 
 namespace App\Actions\PriceSubscription;
 
+use App\Enums\ListingTrackingStatus;
 use App\Models\PriceSubscription;
 use App\Models\TrackedAd;
 use App\Services\Olx\OlxListingAvailabilityChecker;
@@ -61,7 +62,7 @@ readonly class SubscribeToListingPriceAction
                     'listing_url' => $listingUrl,
                     'current_price_minor' => $currentPriceSnapshot['current_price_minor'],
                     'currency_code' => $currentPriceSnapshot['currency_code'],
-                    'last_checked_at' => now(),
+                    'status' => ListingTrackingStatus::ACTIVE,
                 ]
             );
 

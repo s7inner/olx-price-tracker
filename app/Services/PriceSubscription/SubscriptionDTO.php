@@ -22,7 +22,7 @@ final readonly class SubscriptionDTO
             subscriptionId: $subscription->id,
             isNewSubscription: $subscription->wasRecentlyCreated,
             listingUrl: $trackedAd->listing_url,
-            currentPriceMinor: (int) $trackedAd->current_price_minor,
+            currentPriceMinor: $trackedAd->current_price_minor,
             currencyCode: $trackedAd->currency_code,
         );
     }

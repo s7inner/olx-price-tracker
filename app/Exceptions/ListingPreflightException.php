@@ -2,7 +2,7 @@
 
 namespace App\Exceptions;
 
-use App\Enums\ListingPreflightErrorCode;
+use App\Enums\ListingTrackingStatus;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
@@ -10,7 +10,7 @@ use Throwable;
 class ListingPreflightException extends RuntimeException
 {
     public function __construct(
-        public readonly ListingPreflightErrorCode $errorCode,
+        public readonly ListingTrackingStatus $errorCode,
         public readonly int $httpStatus,
         string $message,
         ?Throwable $previous = null,
@@ -21,7 +21,7 @@ class ListingPreflightException extends RuntimeException
     public static function notPublic(): self
     {
         return new self(
-            errorCode: ListingPreflightErrorCode::NOT_PUBLIC,
+            errorCode: ListingTrackingStatus::NON_PUBLIC,
             httpStatus: Response::HTTP_NOT_FOUND,
             message: 'Listing is not publicly available (pending, rejected, or blocked).',
         );
@@ -30,7 +30,7 @@ class ListingPreflightException extends RuntimeException
     public static function inactive(): self
     {
         return new self(
-            errorCode: ListingPreflightErrorCode::INACTIVE,
+            errorCode: ListingTrackingStatus::INACTIVE,
             httpStatus: Response::HTTP_GONE,
             message: 'Listing is inactive or deleted.',
         );
@@ -44,7 +44,7 @@ class ListingPreflightException extends RuntimeException
         }
 
         return new self(
-            errorCode: ListingPreflightErrorCode::UNAVAILABLE,
+            errorCode: ListingTrackingStatus::UNAVAILABLE,
             httpStatus: Response::HTTP_SERVICE_UNAVAILABLE,
             message: $message,
             previous: $previous,

@@ -2,9 +2,10 @@
 
 namespace App\Enums;
 
-enum ListingPreflightErrorCode: string
+enum ListingTrackingStatus: string
 {
-    case NOT_PUBLIC = 'not_public';
+    case ACTIVE = 'active';
+    case NON_PUBLIC = 'not_public';
     case INACTIVE = 'inactive';
     case UNAVAILABLE = 'unavailable';
 }
