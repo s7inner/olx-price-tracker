@@ -34,4 +34,19 @@ class SendListingNotificationEmailJob implements ShouldQueue
             )
         );
     }
+
+    public function notificationType(): ListingNotificationType
+    {
+        return $this->notificationType;
+    }
+
+    public function previousPriceMinor(): ?int
+    {
+        return $this->previousPriceMinor;
+    }
+
+    public function currentPriceMinor(): ?int
+    {
+        return $this->currentPriceMinor;
+    }
 }

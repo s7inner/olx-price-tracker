@@ -3,11 +3,14 @@
 namespace App\Models;
 
 use App\Enums\ListingTrackingStatus;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class TrackedAd extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'olx_ad_id',
         'listing_url',
