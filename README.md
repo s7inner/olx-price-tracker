@@ -7,23 +7,43 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
-## OLX Price Tracker
-
+## OLX Price Tracker 
 **PHP 8.4 required**
+
+### Task
+
+1. Provide an HTTP endpoint for price change subscription. Input: listing URL, email for notifications.
+2. After successful subscription, track listing price and send email notifications on changes.
+3. If multiple users subscribe to the same listing, avoid redundant price checks.
+4. Full service running in Docker container.
+5. Tests with 70%+ coverage.
+6. Email confirmation for users.
 
 ### Set-up Makefile
 
+Add to hosts file:
+
 ```
 127.0.0.1 olx-price-tracker.test
+```
 
+Run:
+
+```bash
 make setup
 ```
 
 ### Set-up Sail (without Makefile)
 
-```bash
-127.0.0.1 olx-price-tracker.test
+Add to hosts file:
 
+```
+127.0.0.1 olx-price-tracker.test
+```
+
+Run:
+
+```bash
 cp .env.example .env
 cp .env.testing.example .env.testing
 
