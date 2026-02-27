@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Actions\PriceSubscription\SubscribeToListingPriceAction;
+use App\Contracts\PriceSubscription\SubscribeToListingPriceInterface;
 use App\Enums\ListingNotificationType;
 use App\Exceptions\ListingPreflightException;
 use App\Http\Requests\StorePriceSubscriptionRequest;
@@ -15,16 +15,18 @@ use Throwable;
 class PriceSubscriptionController extends Controller
 {
     public function __construct(
-        private readonly SubscribeToListingPriceAction $subscribeToListingPriceAction,
+        private readonly SubscribeToListingPriceInterface $subscribeToListingPrice,
     ) {
     }
 
     public function subscribeToListingPrice(StorePriceSubscriptionRequest $request): JsonResponse
     {
+        $user = $request->user();
+
         try {
-            $subscriptionDTO = ($this->subscribeToListingPriceAction)(
+            $subscriptionDTO = ($this->subscribeToListingPrice)(
                 listingUrl: $request->input('listing_url'),
-                subscriberEmail: $request->input('subscriber_email'),
+                userId: $user->id,
             );
         } catch (ListingPreflightException $exception) {
             return response()->json([
@@ -39,7 +41,7 @@ class PriceSubscriptionController extends Controller
 
         if ($subscriptionDTO->isNewSubscription) {
             SendListingNotificationEmailJob::dispatch(
-                subscriberEmail: $request->input('subscriber_email'),
+                subscriberEmail: $user->email,
                 listingUrl: $subscriptionDTO->listingUrl,
                 notificationType: ListingNotificationType::SUBSCRIPTION_CREATED,
                 currentPriceMinor: $subscriptionDTO->currentPriceMinor,

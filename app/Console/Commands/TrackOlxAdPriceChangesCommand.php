@@ -30,7 +30,7 @@ class TrackOlxAdPriceChangesCommand extends Command
     {
         TrackedAd::query()
             ->whereHas('subscriptions')
-            ->with('subscriptions')
+            ->with('subscriptions.user')
             ->chunkById(100, function ($trackedAds): void {
                 foreach ($trackedAds as $trackedAd) {
                     $this->checkTrackedAdPrice($trackedAd);
@@ -199,7 +199,7 @@ class TrackOlxAdPriceChangesCommand extends Command
     ): void {
         foreach ($trackedAd->subscriptions as $subscription) {
             SendListingNotificationEmailJob::dispatch(
-                subscriberEmail: $subscription->subscriber_email,
+                subscriberEmail: $subscription->user->email,
                 listingUrl: $trackedAd->listing_url,
                 notificationType: $notificationType,
                 previousPriceMinor: $previousPriceMinor,

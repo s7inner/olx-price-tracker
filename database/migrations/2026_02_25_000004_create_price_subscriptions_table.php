@@ -14,10 +14,10 @@ return new class extends Migration
         Schema::create('price_subscriptions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('tracked_ad_id')->constrained('tracked_ads')->cascadeOnDelete();
-            $table->string('subscriber_email');
+            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->timestamps();
 
-            $table->unique(['tracked_ad_id', 'subscriber_email']);
+            $table->unique(['tracked_ad_id', 'user_id']);
         });
     }
 

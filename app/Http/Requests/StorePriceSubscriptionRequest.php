@@ -38,7 +38,6 @@ class StorePriceSubscriptionRequest extends FormRequest
     {
         return [
             'listing_url' => ['required', 'url:https', 'starts_with:'.config('olx.listing_url_prefix')],
-            'subscriber_email' => ['required', 'email'],
         ];
     }
 }

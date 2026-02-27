@@ -2,6 +2,7 @@
 
 namespace App\Actions\PriceSubscription;
 
+use App\Contracts\PriceSubscription\SubscribeToListingPriceInterface;
 use App\Enums\ListingTrackingStatus;
 use App\Models\PriceSubscription;
 use App\Models\TrackedAd;
@@ -12,7 +13,7 @@ use App\Services\Olx\OlxPaymentPriceClient;
 use App\Services\PriceSubscription\SubscriptionDTO;
 use Illuminate\Support\Facades\DB;
 
-readonly class SubscribeToListingPriceAction
+readonly class SubscribeToListingPriceAction implements SubscribeToListingPriceInterface
 {
     public function __construct(
         private OlxListingPageClient $olxListingPageClient,
@@ -22,22 +23,22 @@ readonly class SubscribeToListingPriceAction
     ) {
     }
 
-    public function __invoke(string $listingUrl, string $subscriberEmail): SubscriptionDTO
+    public function __invoke(string $listingUrl, int $userId): SubscriptionDTO
     {
         $existingTrackedAd = TrackedAd::query()
             ->where('listing_url', $listingUrl)
             ->first();
 
         if ($existingTrackedAd !== null) {
-            $subscription = $this->ensureSubscription($existingTrackedAd, $subscriberEmail);
+            $subscription = $this->ensureSubscription($existingTrackedAd, $userId);
 
             return SubscriptionDTO::fromModels($existingTrackedAd, $subscription);
         }
 
-        return $this->createTrackedAdAndSubscribe($listingUrl, $subscriberEmail);
+        return $this->createTrackedAdAndSubscribe($listingUrl, $userId);
     }
 
-    private function createTrackedAdAndSubscribe(string $listingUrl, string $subscriberEmail): SubscriptionDTO
+    private function createTrackedAdAndSubscribe(string $listingUrl, int $userId): SubscriptionDTO
     {
         $listingPageResponse = $this->olxListingPageClient->fetch($listingUrl);
         $this->olxListingAvailabilityChecker->assertSubscribableResponse($listingPageResponse);
@@ -52,7 +53,7 @@ readonly class SubscribeToListingPriceAction
 
         return DB::transaction(function () use (
             $listingUrl,
-            $subscriberEmail,
+            $userId,
             $olxAdId,
             $currentPriceSnapshot
         ): SubscriptionDTO {
@@ -66,17 +67,17 @@ readonly class SubscribeToListingPriceAction
                 ]
             );
 
-            $subscription = $this->ensureSubscription($trackedAd, $subscriberEmail);
+            $subscription = $this->ensureSubscription($trackedAd, $userId);
 
             return SubscriptionDTO::fromModels($trackedAd, $subscription);
         });
     }
 
-    private function ensureSubscription(TrackedAd $trackedAd, string $subscriberEmail): PriceSubscription
+    private function ensureSubscription(TrackedAd $trackedAd, int $userId): PriceSubscription
     {
         return PriceSubscription::firstOrCreate([
             'tracked_ad_id' => $trackedAd->id,
-            'subscriber_email' => $subscriberEmail,
+            'user_id' => $userId,
         ]);
     }
 }

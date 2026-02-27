@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\PriceSubscription;
 use App\Models\TrackedAd;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -17,7 +18,7 @@ class PriceSubscriptionFactory extends Factory
     {
         return [
             'tracked_ad_id' => TrackedAd::factory(),
-            'subscriber_email' => $this->faker->unique()->safeEmail(),
+            'user_id' => User::factory(),
         ];
     }
 }

@@ -12,11 +12,16 @@ class PriceSubscription extends Model
 
     protected $fillable = [
         'tracked_ad_id',
-        'subscriber_email',
+        'user_id',
     ];
 
     public function trackedAd(): BelongsTo
     {
         return $this->belongsTo(TrackedAd::class);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 }
