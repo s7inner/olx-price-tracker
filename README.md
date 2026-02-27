@@ -66,4 +66,5 @@ chmod +x vendor/bin/sail vendor/laravel/sail/bin/sail
 | Password  | password           |
 
 ### Test Coverage Overview
-![img.png](img.png)
+<img width="642" height="335" alt="image" src="https://github.com/user-attachments/assets/68b62060-d405-48a0-bffd-08a0ab6950fd" />
+
