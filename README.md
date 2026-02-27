@@ -64,3 +64,6 @@ chmod +x vendor/bin/sail vendor/laravel/sail/bin/sail
 | Database  | olx_price_tracker  |
 | Username  | sail               |
 | Password  | password           |
+
+### Test Coverage Overview
+![img.png](img.png)
