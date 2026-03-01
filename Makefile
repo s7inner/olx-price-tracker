@@ -1,6 +1,6 @@
 # Usage: make setup
 
-.PHONY: setup
+.PHONY: setup queue schedule
 
 setup:
 	@echo "Starting complete project setup..."
@@ -22,3 +22,13 @@ setup:
 	@./vendor/bin/sail artisan migrate --seed --force
 	@./vendor/bin/sail artisan migrate --env=testing --force
 	@echo "Application URL: http://olx-price-tracker.test/"
+	@echo ""
+	@echo "To run queue worker and scheduler, open 2 separate terminals:"
+	@echo "  make queue"
+	@echo "  make schedule"
+
+queue:
+	@./vendor/bin/sail artisan queue:work --sleep=3 --tries=3
+
+schedule:
+	@./vendor/bin/sail artisan schedule:work

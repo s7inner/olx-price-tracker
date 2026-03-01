@@ -33,6 +33,13 @@ Run:
 make setup
 ```
 
+Then run in 2 separate terminals:
+
+```bash
+make queue
+make schedule
+```
+
 ### Set-up Sail (without Makefile)
 
 Add to hosts file:
@@ -53,6 +60,13 @@ chmod +x vendor/bin/sail vendor/laravel/sail/bin/sail
 ./vendor/bin/sail artisan key:generate
 ./vendor/bin/sail artisan migrate
 ./vendor/bin/sail artisan migrate --env=testing
+```
+
+Then run in 2 separate terminals:
+
+```bash
+./vendor/bin/sail artisan queue:work
+./vendor/bin/sail artisan schedule:work
 ```
 
 ### DB connection settings
