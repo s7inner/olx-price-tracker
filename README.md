@@ -95,7 +95,7 @@ Then run in 2 separate terminals:
 <img width="2126" height="4489" alt="image" src="https://github.com/user-attachments/assets/102548af-4835-4550-a68f-f3bdf7c277d8" />
 
 
-The client sends `POST /api/price-subscriptions` with the listing URL and a Bearer token. Middleware checks auth and email verification. The URL is normalized and validated. If the listing is already in the DB, we don't fetch from OLX: we add the user as a subscriber and return data from the DB. Otherwise we: fetch the page (expect 200) → parse HTML for the ad ID → call the OLX payment API → create or update the TrackedAd and subscription → return the response.
+The client sends `POST /api/price-subscriptions` with the listing URL and a Bearer token. Middleware checks auth and email verification. The URL is normalized and validated. If the listing is already in the DB, we don't fetch from OLX: we add the user as a subscriber and return data from the DB. Otherwise we: fetch the page (expect 200) -> parse HTML for the ad ID -> call the OLX payment API -> create or update the TrackedAd and subscription -> return the response.
 
 **ID parsing:**
 - `ad-id=` in links/URL params
@@ -113,3 +113,35 @@ This endpoint is not auth-protected, so I used it.
 
 <img width="3154" height="6076" alt="image" src="https://github.com/user-attachments/assets/8acff488-b97a-4da9-876c-3d43ecec2725" />
 
+### Part 2 – Price check command
+
+Cron runs `ads:check-olx-prices` every 5 minutes. Only ads with subscribers are processed. For each ad, the listing page HTTP status is checked first.
+
+**Listing page status -> internal status:**
+
+| HTTP | Status     |
+|------|------------|
+| 200  | ACTIVE     |
+| 404  | NON_PUBLIC |
+| 410  | INACTIVE   |
+| other / error | UNAVAILABLE |
+
+**Payment API:** called only when status is **200** (ACTIVE). For 404, 410, or UNAVAILABLE, the payment API is not used.
+
+**Status change (ACTIVE -> other):**
+- If it was ACTIVE before and the status changed -> email: `non-public`, `inactive`, or `unavailable`.
+- If it was not ACTIVE before (e.g. inactive and still inactive) -> no email.
+
+**When status is ACTIVE:**
+1. Call payment API.
+2. If fetch fails -> log and skip (no email).
+3. If price did not change:
+    - **Reactivated** (was inactive / non-public / unavailable, became ACTIVE) -> email: `listing reactivated`.
+    - Not reactivated -> no email.
+4. If price changed:
+    - **Reactivated** -> email: `reactivated + price change`.
+    - Not reactivated -> email: `price changed`.
+
+**Email summary:**
+- **Send:** non-public, inactive, unavailable, listing reactivated, reactivated + price change, price changed.
+- **Do not send:** status unchanged; was not ACTIVE and stayed not ACTIVE; payment API fetch failed; ACTIVE with unchanged price and not reactivated.
