@@ -110,3 +110,6 @@ This endpoint is not auth-protected, so I used it.
 **Email:** A confirmation email is sent only for new subscriptions (when this user has not been subscribed to this listing before). For existing subscriptions, no email is sent.
 
 ### Part 2 – Price check command
+
+<img width="3154" height="6076" alt="image" src="https://github.com/user-attachments/assets/8acff488-b97a-4da9-876c-3d43ecec2725" />
+
