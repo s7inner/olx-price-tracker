@@ -113,8 +113,6 @@ This endpoint is not auth-protected, so I used it.
 
 <img width="3154" height="6076" alt="image" src="https://github.com/user-attachments/assets/8acff488-b97a-4da9-876c-3d43ecec2725" />
 
-### Part 2 – Price check command
-
 Cron runs `ads:check-olx-prices` every 5 minutes. Only ads with subscribers are processed. For each ad, the listing page HTTP status is checked first.
 
 **Listing page status -> internal status:**
