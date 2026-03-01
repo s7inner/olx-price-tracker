@@ -21,15 +21,9 @@
 
 ### Set-up Makefile
 
-Add to hosts file:
-
-```
-127.0.0.1 olx-price-tracker.test
-```
-
-Run:
-
 ```bash
+127.0.0.1 olx-price-tracker.test (add to hosts file)
+
 make setup
 ```
 
@@ -45,16 +39,9 @@ Set your SMTP credentials in `.env`:
 2. `MAIL_PASSWORD="xxxx xxxx xxxx xxxx"`
 
 ### Set-up Sail (without Makefile)
-
-Add to hosts file:
-
-```
-127.0.0.1 olx-price-tracker.test
-```
-
-Run:
-
 ```bash
+127.0.0.1 olx-price-tracker.test (add to hosts file)
+
 cp .env.example .env
 cp .env.testing.example .env.testing
 
