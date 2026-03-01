@@ -86,3 +86,24 @@ Then run in 2 separate terminals:
 ### Test Coverage Overview
 <img width="642" height="335" alt="image" src="https://github.com/user-attachments/assets/68b62060-d405-48a0-bffd-08a0ab6950fd" />
 
+## How does it work?
+
+**Core idea:** Parse the listing URL once to get the ad ID. From then on, only call the OLX payment API to check for price changes.
+
+### Part 1 – Subscription
+
+The client sends `POST /api/price-subscriptions` with the listing URL and a Bearer token. Middleware checks auth and email verification. The URL is normalized and validated. If the listing is already in the DB, we don't fetch from OLX: we add the user as a subscriber and return data from the DB. Otherwise we: fetch the page (expect 200) → parse HTML for the ad ID → call the OLX payment API → create or update the TrackedAd and subscription → return the response.
+
+**ID parsing:**
+- `ad-id=` in links/URL params
+- `application/ld+json` scripts with Product schema and `sku`
+-  visible "ID: …" label via regex
+
+**OLX payment API:**
+https://ua.production.delivery.olx.tools/payment/ad/{adId}/buyer/
+
+This endpoint is not auth-protected, so I used it.
+
+**Email:** A confirmation email is sent only for new subscriptions (when this user has not been subscribed to this listing before). For existing subscriptions, no email is sent.
+
+### Part 2 – Price check command
