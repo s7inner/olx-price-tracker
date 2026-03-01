@@ -60,6 +60,7 @@ chmod +x vendor/bin/sail vendor/laravel/sail/bin/sail
 ./vendor/bin/sail artisan key:generate
 ./vendor/bin/sail artisan migrate
 ./vendor/bin/sail artisan migrate --env=testing
+./vendor/bin/sail exec -u root laravel.test php artisan vendor:publish --provider="Dedoc\Scramble\ScrambleServiceProvider" --tag="scramble-config" --force
 ```
 
 Then run in 2 separate terminals:
@@ -68,6 +69,9 @@ Then run in 2 separate terminals:
 ./vendor/bin/sail artisan queue:work
 ./vendor/bin/sail artisan schedule:work
 ```
+
+### API Documentation (Swagger)
+- http://olx-price-tracker.test/docs/api
 
 ### DB connection settings
 

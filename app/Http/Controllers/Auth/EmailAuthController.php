@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Dedoc\Scramble\Attributes\PathParameter;
+use Dedoc\Scramble\Attributes\Response as ScrambleResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -12,6 +14,12 @@ use Symfony\Component\HttpFoundation\Response;
 
 class EmailAuthController extends Controller
 {
+    /**
+     * Request email verification link.
+     *
+     * @unauthenticated
+     */
+    #[ScrambleResponse(Response::HTTP_ACCEPTED, 'Verification email sent')]
     public function requestVerificationLink(Request $request): JsonResponse
     {
         $email = mb_strtolower($request->validate(['email' => ['required', 'email']])['email']);
@@ -33,6 +41,14 @@ class EmailAuthController extends Controller
         ], Response::HTTP_ACCEPTED);
     }
 
+    /**
+     * Verify email and get API token.
+     *
+     * @unauthenticated
+     */
+    #[PathParameter('id', description: 'User ID')]
+    #[PathParameter('hash', description: 'Verification hash')]
+    #[ScrambleResponse(Response::HTTP_FORBIDDEN, 'Invalid or expired verification link', type: 'array{message: string}')]
     public function verifyEmail(int $id, string $hash): JsonResponse
     {
         $user = User::query()->find($id);

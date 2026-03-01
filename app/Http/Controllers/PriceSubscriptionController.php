@@ -8,6 +8,8 @@ use App\Exceptions\ListingPreflightException;
 use App\Http\Requests\StorePriceSubscriptionRequest;
 use App\Http\Resources\PriceSubscriptionResource;
 use App\Jobs\SendListingNotificationEmailJob;
+use Dedoc\Scramble\Attributes\BodyParameter;
+use Dedoc\Scramble\Attributes\Response as ScrambleResponse;
 use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
@@ -19,6 +21,15 @@ class PriceSubscriptionController extends Controller
     ) {
     }
 
+    /**
+     * Subscribe to listing price changes.
+     */
+    #[BodyParameter('listing_url', description: 'OLX listing URL', required: true, type: 'string', format: 'uri', example: 'https://www.olx.ua/d/uk/listing/123456789')]
+    #[ScrambleResponse(Response::HTTP_OK, 'OK', type: '\App\Http\Resources\PriceSubscriptionResource')]
+    #[ScrambleResponse(Response::HTTP_CREATED, 'New subscription created', type: '\App\Http\Resources\PriceSubscriptionResource')]
+    #[ScrambleResponse(Response::HTTP_NOT_FOUND, 'Listing is not publicly available', type: 'array{message: string, error_code: string}')]
+    #[ScrambleResponse(Response::HTTP_GONE, 'Listing is inactive or deleted', type: 'array{message: string, error_code: string}')]
+    #[ScrambleResponse(Response::HTTP_SERVICE_UNAVAILABLE, 'Service unavailable', type: 'array{message: string}')]
     public function subscribeToListingPrice(StorePriceSubscriptionRequest $request): JsonResponse
     {
         $user = $request->user();

@@ -21,6 +21,7 @@ setup:
 	@echo "Running database migrations..."
 	@./vendor/bin/sail artisan migrate --seed --force
 	@./vendor/bin/sail artisan migrate --env=testing --force
+	@./vendor/bin/sail exec -u root laravel.test php artisan vendor:publish --provider="Dedoc\Scramble\ScrambleServiceProvider" --tag="scramble-config" --force
 	@echo "Application URL: http://olx-price-tracker.test/"
 	@echo ""
 	@echo "To run queue worker and scheduler, open 2 separate terminals:"
