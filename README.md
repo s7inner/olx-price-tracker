@@ -40,6 +40,10 @@ make queue
 make schedule
 ```
 
+Set your SMTP credentials in `.env`:
+1. `MAIL_USERNAME=your_email@gmail.com`
+2. `MAIL_PASSWORD="xxxx xxxx xxxx xxxx"`
+
 ### Set-up Sail (without Makefile)
 
 Add to hosts file:
@@ -69,6 +73,10 @@ Then run in 2 separate terminals:
 ./vendor/bin/sail artisan queue:work
 ./vendor/bin/sail artisan schedule:work
 ```
+
+Set your SMTP credentials in `.env`:
+1. `MAIL_USERNAME=your_email@gmail.com`
+2. `MAIL_PASSWORD="xxxx xxxx xxxx xxxx"`
 
 ### API Documentation (Swagger)
 - http://olx-price-tracker.test/docs/api
