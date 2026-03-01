@@ -92,6 +92,9 @@ Then run in 2 separate terminals:
 
 ### Part 1 – Subscription
 
+<img width="2126" height="4489" alt="image" src="https://github.com/user-attachments/assets/102548af-4835-4550-a68f-f3bdf7c277d8" />
+
+
 The client sends `POST /api/price-subscriptions` with the listing URL and a Bearer token. Middleware checks auth and email verification. The URL is normalized and validated. If the listing is already in the DB, we don't fetch from OLX: we add the user as a subscriber and return data from the DB. Otherwise we: fetch the page (expect 200) → parse HTML for the ad ID → call the OLX payment API → create or update the TrackedAd and subscription → return the response.
 
 **ID parsing:**
