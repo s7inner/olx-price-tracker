@@ -103,7 +103,7 @@ The client sends `POST /api/price-subscriptions` with the listing URL and a Bear
 -  visible "ID: …" label via regex
 
 **OLX payment API:**
-https://ua.production.delivery.olx.tools/payment/ad/{adId}/buyer/
+{OLX_PAYMENT_BASE_URL}/payment/ad/{adId}/buyer/
 
 This endpoint is not auth-protected, so I used it.
 
